@@ -5,12 +5,12 @@
 #include <math.h>
 #include <mkl.h>
 
-#define LOOPALL for (iatom = 0; iatom < Natom; ++iatom)
-
-double pbc(x)
+double WrapPBC(double x)
 {
-    if (x > 0.5) --x;
-    else if (x < -0.5) ++x;
+    if (x > 0.5)
+        --x;
+    else if (x < -0.5)
+        ++x;
 
     return x;
 }
@@ -18,24 +18,24 @@ double pbc(x)
 int main(int argc, char **argv)
 {
     FILE *fp_in, *fp_out;
-    int Natom, Nstep;                   /* number of atoms, totel steps,    */
-    double timestep;                    /* and timestep in dump file        */
+    int Natom, Nstep;           /* number of atoms, totel steps,    */
+    double timestep;            /* and timestep in dump file        */
 
-    int Nfreq, Nevery, Nrepeat;         /* choose t0 every Nfreq steps      */
-    int Nstart;                         /* perform sampling at intervals of */
-    int *start, *sample;                /* Nevery steps and repeated M times*/
+    int Nfreq, Nevery, Nrepeat; /* choose t0 every Nfreq steps      */
+    int Nstart;                 /* perform sampling at intervals of */
+    int *start, *sample;        /* Nevery steps and repeated M times*/
 
-    double rcut1, rcut2;                /* lower and upper truncate radius  */
-    int *N_neigh, **l_neigh;            /* to build neighbor list           */
+    double rcut1, rcut2;        /* lower and upper truncate radius  */
+    int *N_neigh, **l_neigh;    /* to build neighbor list           */
     int N_pair, max_neigh;
 
-    double **r_ref, *r_cur;             /* reference configuration at t0    */
-    double box[3], tmp[3], *dr, *dr_sum;/* and configuration at current step*/
+    double **r, **r_ref, **box; /* configuration                    */
+    double tmp[3], *dr, *dr_sum;/* and configuration at current step*/
     double qmax, qmax_2;
     int type;
 
-    int iatom, jatom, itype;            /* some other variables             */
-    int istep, jstep, i, j, k, t0, t1;
+    int iatom, jatom, itype;    /* some other variables             */
+    int istep, jstep, i, j, k;
     double tmp0, tmp1, tmp2;
     char **buff, *token;
     double *sisf, *sisf_p, *sisf_q;
@@ -66,67 +66,81 @@ int main(int argc, char **argv)
 
     Nstart = (Nstep - Nrepeat * Nevery) / Nfreq;
     start = (int *)malloc(Nstart * sizeof(int));
-    for (i = 0; i < Nstart; ++i) start[i] = (i + 1) * Nfreq;
+    for (i = 0; i < Nstart; ++i)
+        start[i] = (i + 1) * Nfreq;
     sample = (int *)malloc(Nrepeat * sizeof(int));
     sisf = (double *)calloc(Nrepeat, sizeof(double));
     sisf_p = (double *)calloc(Nrepeat, sizeof(double));
     sisf_q = (double *)calloc(Nrepeat, sizeof(double));
-    for (i = 0; i < Nrepeat; ++i) sample[i] = (i + 1) * Nevery;
+    for (i = 0; i < Nrepeat; ++i)
+        sample[i] = (i + 1) * Nevery;
+    
+    r = (double **)malloc((Nstep + 1) * sizeof(double));
+    box = (double **)malloc((Nstep + 1) * sizeof(double));
+    for (i = 0; i < Nstep + 1; ++i)
+    {
+        r[i] = (double *)malloc(3 * Natom * sizeof(double));
+        box[i] = (double *)malloc(3 * sizeof(double));
+    }
+
     r_ref = (double **)malloc(Nstart * sizeof(double *));
     for (i = 0; i < Nstart; ++i)
         r_ref = (double *)malloc(3 * Natom * sizeof(double));
     dr = (double *)malloc(3 * Natom * sizeof(double));
     dr_sum = (double *)malloc(Natom * sizeof(double));
-    r_cur = (double *)malloc(3 * Natom * sizeof(double));
 
     N_neigh = (int *)calloc(Natom, sizeof(int));
     l_neigh = (int **)malloc(Natom * sizeof(int *));
-    LOOPALL l_neigh[iatom] = (int *)malloc(max_neigh * sizeof(int));
+    for (iatom = 0; iatom < Natom; ++iatom)
+        l_neigh[iatom] = (int *)malloc(max_neigh * sizeof(int));
 
     buff = (char **)malloc((9 + Natom) * sizeof(char *));
     for (i = 0; i < 9 + Natom; ++i)
         buff[i] = (char *)malloc(256 * sizeof(double));
-    
-    /* read first step                  */
-    for (i = 0; i < 9 + Natom; ++i)
-        fgets(buff[i], 256, fp_in);
-    /* get information of box           */
-    for (i = 0; i < 3; ++i)
+
+    /* read dump file                   */
+    for (istep = 0; istep < Nstep + 1; ++istep)
     {
-        tmp[0] = strtok(buff[5 + i], " ");
-        tmp[1] = strtok(NULL, " ");
-        box[i] = tmp[1] - tmp[0];
+        for (i = 0; i < 9 + Natom; ++i)
+            fgets(buff[i], 256, fp_in);
+        
+        /* get information of box           */
+        for (i = 0; i < 3; ++i)
+        {
+            tmp0 = atof(strtok(buff[5 + i], " "));
+            tmp1 = atof(strtok(NULL, " "));
+            box[istep][i] = atof(strtok(buff[5 + i], " "));
+        }
+
+        /* read coordinate                  */
+        for (iatom = 0; iatom < Natom; ++iatom)
+        {
+            itype = atoi(strtok(buff[9 + iatom], " "));
+            r[istep][3 * iatom] = atof(strtok(NULL, " "));
+            r[istep][3 * iatom + 1] = atof(strtok(NULL, " "));
+            r[istep][3 * iatom + 2] = atof(strtok(NULL, " "));
+        }
     }
-    /* read coordinate                  */
-    LOOPALL
-    {
-        itype = atoi(strtok(buff[9 + iatom], " "));
-        r_ref[0][3 * iatom] = atof(strtok(NULL, " "));
-        r_ref[0][3 * iatom + 1] = atof(strtok(NULL, " "));
-        r_ref[0][3 * iatom + 2] = atof(strtok(NULL, " "));
-    }
+
     /* build neighbor list              */
-    #pragma omp parallel for schedule (dynamic) \
-            firstprivate(rcut1, rcut2, box) private(jatom, tmp)
-    LOOPALL
+    #pragma omp parallel for schedule(dynamic) \
+            firstprivate(rcut1, rcut2, Natom) \
+            private(jatom, tmp0, tmp1, tmp2)
+    for (iatom = 0; iatom < Natom; ++iatom)
     {
         for (jatom = 0; jatom < Natom; ++jatom)
         {
-            tmp[0] = r_ref[0][3 * iatom] - r_ref[0][3 * jatom];
-            tmp[1] = r_ref[0][3 * iatom + 1] - r_ref[0][3 * jatom + 1];
-            tmp[2] = r_ref[0][3 * iatom + 2] - r_ref[0][3 * jatom + 2];
+            tmp0 = r[0][3 * iatom] - r[0][3 * jatom];
+            tmp1 = r[0][3 * iatom + 1] - r[0][3 * jatom + 1];
+            tmp2 = r[0][3 * iatom + 2] - r[0][3 * jatom + 2];
 
-            pbc(tmp[0]);
-            pbc(tmp[1]);
-            pbc(tmp[2]);
+            tmp0 = box[0][0] * WrapPBC(tmp0);
+            tmp1 = box[0][1] * WrapPBC(tmp0);
+            tmp2 = box[0][2] * WrapPBC(tmp0);
 
-            tmp[0] *= box[0];
-            tmp[1] *= box[1];
-            tmp[2] *= box[2];
-
-            tmp[0] *= tmp[0];
-            tmp[0] += tmp[1] * tmp[1] + tmp[2] * tmp[2];
-            if (tmp[0] < rcut1 || tmp[0] > rcut2)
+            tmp0 *= tmp0;
+            tmp0 += tmp1 * tmp1 + tmp2 * tmp2;
+            if (tmp0 < rcut1 || tmp0 > rcut2)
                 continue;
 
             l_neigh[N_neigh[iatom]] = jatom;
@@ -135,77 +149,59 @@ int main(int argc, char **argv)
     }
 
     /* total number of atom pairs       */
-    N_pair = 0;
-    LOOPALL N_pair += N_neigh[iatom];
-    N_pair *= 0.5;
+    for (iatom = 0; iatom < Natom; ++iatom)
+        N_pair += N_neigh[iatom];
     printf("Total number of atom pairs: %d\n", N_pair);
 
-    /* read dump file                   */
-    for (istep = 0; istep < Nstep; ++istep)
+    for (i = 0; i < Nstart; ++i)
     {
-        for (i = 0; i < 9 + Natom; ++i)
-            fgets(buff[i], 256, fp_in);
-        
-        for (i = 0; i < Nstart; ++i)
+        t0 = i * Nfreq;
+        for (j = 0; j < Nrepeat; ++j)
         {
-            /* check whether to sample  */
-            for (j = 0; j < Nrepeat; ++j)
+            t1 = t0 + j * Nevery;
+
+            /* displacement of atoms                */
+            vdSub(r[t0], r[t1], 3 * Natom, dr);
+            #pragma omp parallel for schedule(dynamic) firstprivate(t1)
+            for (iatom = 0; iatom < Natom; ++iatom)
             {
-                if (istep - start[i] - sample[j] != 0)
-                    continue;
-                
-                /* save current configuration           */
-                LOOPALL
-                {
-                    itype = atoi(strtok(buff[9 + iatom], " "));
-                    r_cur[3 * iatom] = atof(strtok(NULL, " "));
-                    r_cur[3 * iatom + 1] = atof(strtok(NULL, " "));
-                    r_cur[3 * iatom + 2] = atof(strtok(NULL, " "));
-                }
-
-                /* compute displacement of all atoms    */
-                vdSub(r_cur, r_ref[i], 3 * Natom, dr);
-                #pragma omp parallel for schedule(dynamic) firstprivate(box)
-                LOOPALL
-                {
-                    pbc(dr[3 * iatom]);
-                    pbc(dr[3 * iatom + 1]);
-                    pbc(dr[3 * iatom + 2]);
-                    dr[3 * iatom] *= box[0];
-                    dr[3 * iatom + 1] *= box[1];
-                    dr[3 * iatom + 2] *= box[2];
-                    dr_sum[iatom] = dr[3 * iatom] * dr[3 * iatom + 1] + dr[3 * iatom + 2];
-                }
-
-                /* compute atom pairs in neighbor list  */
-                /* P = (r_1 + r_2) / 2
-                   Q = (r_1 - r_2) / 2 */
-                #pragma omp parallel for schedule(dynamic)
-                firstprivate(j), private(k, jatom) reduction(+ : tmp[0], tmp[1], tmp[2])
-                LOOPALL
-                {
-                    tmp[0] += cos(qmax * dr_sum[iatom]);
-                    for (k = 0; k < N_neigh[iatom]; ++k)
-                    {
-                        jatom = l_neigh[k];
-                        tmp[1] += cos(qmax_2 * (dr_sum[iatom] + dr_sum[jatom]));
-                        tmp[2] += cos(qmax_2 * (dr_sum[iatom] - dr_sum[jatom]));
-                    }
-                }
-                sisf[j] += tmp[0];
-                sisf_p[j] += tmp[1];
-                sisf_q[j] += tmp[2];
+                dr[3 * iatom] = box[t1][0] * WrapPBC(dr[3 * iatom]);
+                dr[3 * iatom + 1] = box[t1][1] * WrapPBC(dr[3 * iatom + 1]);
+                dr[3 * iatom + 2] = box[t1][2] * WrapPBC(dr[3 * iatom + 2]);
+                dr_sum[iatom] = dr[3 * iatom] + dr[3 * iatom + 1] + dr[3 * iatom + 2];
             }
         }
+    
+        /* compute atom pairs in neighbor list  */
+        /* P = (r_1 + r_2) / 2
+        Q = (r_1 - r_2) / 2 */
+        tmp0 = tmp1 = tmp2 = 0;
+        #pragma omp parallel for schedule(dynamic) \
+                firstprivate(qmax, qmax_2) private(k, jatom) \
+                reduction(+ : tmp0, tmp1, tmp2) 
+        for (iatom = 0; iatom < Natom; ++iatom)
+        {
+            tmp0 += cos(qmax * dr_sum[iatom]);
+            for (k = 0; k < N_neigh[iatom]; ++k)
+            {
+                jatom = l_neigh[k];
+                tmp1 += cos(qmax_2 * (dr_sum[iatom] + dr_sum[jatom]));
+                tmp2 += cos(qmax_2 * (dr_sum[iatom] - dr_sum[jatom]));
+            }
+        }
+        sisf[j] += tmp0;
+        sisf_p[j] += tmp1;
+        sisf_q[j] += tmp2;
     }
+        
 
     /* output                           */
-    fp_out = fopen("sisf.dat","w");
+    fp_out = fopen("sisf.dat", "w");
     fprintf(fp_out, "# t  self  P  Q\n");
-    double norm1 = 1. / (Natom * Nstart), norm2 = 1. / (N_pair * Nstart); 
+    double norm1 = 1. / (Natom * Nstart), norm2 = 1. / (N_pair * Nstart);
     for (i = 0; i < Nrepeat; ++i)
     {
-        fprintf(fp_out, "%.3f  %lf  %lf  %lf\n", 
+        fprintf(fp_out, "%.3f  %lf  %lf  %lf\n",
                 sample[i] * timestep,
                 sisf[i] * norm1,
                 sisf_p[i] * norm2,
