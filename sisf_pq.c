@@ -29,16 +29,16 @@ int main(int argc, char **argv)
     int *N_neigh, **l_neigh;    /* to build neighbor list           */
     int N_pair, max_neigh;
 
-    double **r, **r_ref, **box; /* configuration                    */
-    double tmp[3], *dr, *dr_sum;/* and configuration at current step*/
+    double **r, **box;
+    double *dr, *dr_sum;
     double qmax, qmax_2;
     int type;
 
     int iatom, jatom, itype;    /* some other variables             */
-    int istep, jstep, i, j, k;
-    double tmp0, tmp1, tmp2;
-    char **buff, *token;
-    double *sisf, *sisf_p, *sisf_q;
+    int istep, jstep, i, j, k, t0, t1;
+    double tmp0, tmp1, tmp2, tmp3, tmp4, tmp5;
+    char **buff, token[256];
+    double *sisf, *sisf_p, *sisf_q, *msd, *msd_p, *msd_q;
 
     /* read configure file */
     fp_in = fopen("sisf.conf", "r");
@@ -54,7 +54,6 @@ int main(int argc, char **argv)
     fscanf(fp_in, "Rcut2        %lf\n", &rcut2);
     fscanf(fp_in, "qmax         %lf\n", &qmax);
     fclose(fp_in);
-    fp_in = fopen(token, "r");
 
     /* initialize parameters and arrays */
     rcut1 *= rcut1;
@@ -69,23 +68,17 @@ int main(int argc, char **argv)
     for (i = 0; i < Nstart; ++i)
         start[i] = (i + 1) * Nfreq;
     sample = (int *)malloc(Nrepeat * sizeof(int));
-    sisf = (double *)calloc(Nrepeat, sizeof(double));
-    sisf_p = (double *)calloc(Nrepeat, sizeof(double));
-    sisf_q = (double *)calloc(Nrepeat, sizeof(double));
     for (i = 0; i < Nrepeat; ++i)
         sample[i] = (i + 1) * Nevery;
-    
-    r = (double **)malloc((Nstep + 1) * sizeof(double));
-    box = (double **)malloc((Nstep + 1) * sizeof(double));
+
+    r = (double **)malloc((Nstep + 1) * sizeof(double *));
+    box = (double **)malloc((Nstep + 1) * sizeof(double *));
     for (i = 0; i < Nstep + 1; ++i)
     {
         r[i] = (double *)malloc(3 * Natom * sizeof(double));
         box[i] = (double *)malloc(3 * sizeof(double));
     }
 
-    r_ref = (double **)malloc(Nstart * sizeof(double *));
-    for (i = 0; i < Nstart; ++i)
-        r_ref = (double *)malloc(3 * Natom * sizeof(double));
     dr = (double *)malloc(3 * Natom * sizeof(double));
     dr_sum = (double *)malloc(Natom * sizeof(double));
 
@@ -96,9 +89,17 @@ int main(int argc, char **argv)
 
     buff = (char **)malloc((9 + Natom) * sizeof(char *));
     for (i = 0; i < 9 + Natom; ++i)
-        buff[i] = (char *)malloc(256 * sizeof(double));
+        buff[i] = (char *)malloc(256 * sizeof(char));
 
+    sisf = (double *)calloc(Nrepeat, sizeof(double));
+    sisf_p = (double *)calloc(Nrepeat, sizeof(double));
+    sisf_q = (double *)calloc(Nrepeat, sizeof(double));
+    msd = (double *)calloc(Nrepeat, sizeof(double));
+    msd_p = (double *)calloc(Nrepeat, sizeof(double));
+    msd_q = (double *)calloc(Nrepeat, sizeof(double));
+    
     /* read dump file                   */
+    fp_in = fopen(token, "r");
     for (istep = 0; istep < Nstep + 1; ++istep)
     {
         for (i = 0; i < 9 + Natom; ++i)
@@ -109,7 +110,7 @@ int main(int argc, char **argv)
         {
             tmp0 = atof(strtok(buff[5 + i], " "));
             tmp1 = atof(strtok(NULL, " "));
-            box[istep][i] = atof(strtok(buff[5 + i], " "));
+            box[istep][i] = tmp1 - tmp0;
         }
 
         /* read coordinate                  */
@@ -143,7 +144,7 @@ int main(int argc, char **argv)
             if (tmp0 < rcut1 || tmp0 > rcut2)
                 continue;
 
-            l_neigh[N_neigh[iatom]] = jatom;
+            l_neigh[iatom][N_neigh[iatom]] = jatom;
             ++N_neigh[iatom];
         }
     }
@@ -151,17 +152,17 @@ int main(int argc, char **argv)
     /* total number of atom pairs       */
     for (iatom = 0; iatom < Natom; ++iatom)
         N_pair += N_neigh[iatom];
-    printf("Total number of atom pairs: %d\n", N_pair);
+    // printf("Total number of atom pairs: %d\n", N_pair);
 
     for (i = 0; i < Nstart; ++i)
     {
         t0 = i * Nfreq;
         for (j = 0; j < Nrepeat; ++j)
         {
-            t1 = t0 + j * Nevery;
+            t1 = t0 + sample[j];
 
             /* displacement of atoms                */
-            vdSub(r[t0], r[t1], 3 * Natom, dr);
+            vdSub(3 * Natom, r[t0], r[t1], dr);
             #pragma omp parallel for schedule(dynamic) firstprivate(t1)
             for (iatom = 0; iatom < Natom; ++iatom)
             {
@@ -170,42 +171,69 @@ int main(int argc, char **argv)
                 dr[3 * iatom + 2] = box[t1][2] * WrapPBC(dr[3 * iatom + 2]);
                 dr_sum[iatom] = dr[3 * iatom] + dr[3 * iatom + 1] + dr[3 * iatom + 2];
             }
-        }
     
-        /* compute atom pairs in neighbor list  */
-        /* P = (r_1 + r_2) / 2
-        Q = (r_1 - r_2) / 2 */
-        tmp0 = tmp1 = tmp2 = 0;
-        #pragma omp parallel for schedule(dynamic) \
-                firstprivate(qmax, qmax_2) private(k, jatom) \
-                reduction(+ : tmp0, tmp1, tmp2) 
-        for (iatom = 0; iatom < Natom; ++iatom)
-        {
-            tmp0 += cos(qmax * dr_sum[iatom]);
-            for (k = 0; k < N_neigh[iatom]; ++k)
+            /* compute atom pairs in neighbor list  */
+            /* P = (r_1 + r_2) / 2
+             * Q = (r_1 - r_2) / 2 
+             */
+            tmp0 = tmp1 = tmp2 = 0;
+            tmp3 = tmp4 = tmp5 = 0;
+            #pragma omp parallel for schedule(dynamic) \
+                    firstprivate(qmax, qmax_2) private(k, jatom) \
+                    reduction(+ : tmp0, tmp1, tmp2, tmp3, tmp4, tmp5) 
+            for (iatom = 0; iatom < Natom; ++iatom)
             {
-                jatom = l_neigh[k];
-                tmp1 += cos(qmax_2 * (dr_sum[iatom] + dr_sum[jatom]));
-                tmp2 += cos(qmax_2 * (dr_sum[iatom] - dr_sum[jatom]));
+                tmp0 += cos(qmax * dr_sum[iatom]);
+                tmp3 += dr[3 * iatom] * dr[3 * iatom] \
+                      + dr[3 * iatom + 1] * dr[3 * iatom + 1] \
+                      + dr[3 * iatom + 2] * dr[3 * iatom + 2];
+                for (k = 0; k < N_neigh[iatom]; ++k)
+                {
+                    jatom = l_neigh[iatom][k];
+                    tmp1 += cos(qmax_2 * (dr_sum[iatom] + dr_sum[jatom]));
+                    tmp2 += cos(qmax_2 * (dr_sum[iatom] - dr_sum[jatom]));
+                    tmp4 += (dr[3 * iatom] + dr[3 * jatom]) * (dr[3 * iatom] + dr[3 * jatom]) \
+                          + (dr[3 * iatom + 1] + dr[3 * jatom + 1]) * (dr[3 * iatom + 1] + dr[3 * jatom + 1]) \
+                          + (dr[3 * iatom + 2] + dr[3 * jatom + 2]) * (dr[3 * iatom + 2] + dr[3 * jatom + 2]);
+                    tmp5 += (dr[3 * iatom] - dr[3 * jatom]) * (dr[3 * iatom] - dr[3 * jatom]) \
+                          + (dr[3 * iatom + 1] - dr[3 * jatom + 1]) * (dr[3 * iatom + 1] - dr[3 * jatom + 1]) \
+                          + (dr[3 * iatom + 2] - dr[3 * jatom + 2]) * (dr[3 * iatom + 2] - dr[3 * jatom + 2]);
+                }
             }
+            sisf[j] += tmp0;
+            sisf_p[j] += tmp1;
+            sisf_q[j] += tmp2;
+            msd[j] += tmp3;
+            msd_p[j] += tmp4;
+            msd_q[j] += tmp5;
         }
-        sisf[j] += tmp0;
-        sisf_p[j] += tmp1;
-        sisf_q[j] += tmp2;
     }
         
 
     /* output                           */
+    double norm1 = 1. / (Natom * Nstart), norm2 = 1. / (N_pair * Nstart);
+    
     fp_out = fopen("sisf.dat", "w");
     fprintf(fp_out, "# t  self  P  Q\n");
-    double norm1 = 1. / (Natom * Nstart), norm2 = 1. / (N_pair * Nstart);
     for (i = 0; i < Nrepeat; ++i)
     {
-        fprintf(fp_out, "%.3f  %lf  %lf  %lf\n",
+        fprintf(fp_out, "%.3f  %lf  %lf  %lf\n",    
                 sample[i] * timestep,
                 sisf[i] * norm1,
                 sisf_p[i] * norm2,
                 sisf_q[i] * norm2);
+    }
+    fclose(fp_out);
+
+    fp_out = fopen("msd.dat", "w");
+    fprintf(fp_out, "# t  self  P  Q\n");
+    for (i = 0; i < Nrepeat; ++i)
+    {
+        fprintf(fp_out, "%.3f  %lf  %lf  %lf\n",    
+                sample[i] * timestep,
+                msd[i] * norm1,
+                msd_p[i] * norm2,
+                msd_q[i] * norm2);
     }
 
     return 0;
