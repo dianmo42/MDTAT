@@ -5,16 +5,6 @@
 #include <math.h>
 #include <mkl.h>
 
-double WrapPBC(double x)
-{
-    if (x > 0.5)
-        --x;
-    else if (x < -0.5)
-        ++x;
-
-    return x;
-}
-
 int main(int argc, char **argv)
 {
     FILE *fp_in, *fp_out;
@@ -26,7 +16,7 @@ int main(int argc, char **argv)
     int *start, *sample;        /* Nevery steps and repeated M times*/
 
     double rcut1, rcut2;        /* lower and upper truncate radius  */
-    int *N_neigh, **l_neigh;    /* to build neighbor list           */
+    int *N_neigh, **list_neigh;    /* to build neighbor list           */
     int N_pair, max_neigh;
 
     double **r, **box;
@@ -83,9 +73,9 @@ int main(int argc, char **argv)
     dr_sum = (double *)malloc(Natom * sizeof(double));
 
     N_neigh = (int *)calloc(Natom, sizeof(int));
-    l_neigh = (int **)malloc(Natom * sizeof(int *));
+    list_neigh = (int **)malloc(Natom * sizeof(int *));
     for (iatom = 0; iatom < Natom; ++iatom)
-        l_neigh[iatom] = (int *)malloc(max_neigh * sizeof(int));
+        list_neigh[iatom] = (int *)malloc(max_neigh * sizeof(int));
 
     buff = (char **)malloc((9 + Natom) * sizeof(char *));
     for (i = 0; i < 9 + Natom; ++i)
@@ -123,28 +113,34 @@ int main(int argc, char **argv)
         }
     }
 
-    /* build neighbor list              */
-    #pragma omp parallel for schedule(dynamic) \
-            firstprivate(rcut1, rcut2, Natom) \
-            private(jatom, tmp0, tmp1, tmp2)
+    /* build neighbor list at first step    */
     for (iatom = 0; iatom < Natom; ++iatom)
     {
+    #pragma omp parallel for schedule(dynamic) \
+            firstprivate(rcut1, rcut2) \
+            private(tmp0, tmp1, tmp2, tmp3)
         for (jatom = 0; jatom < Natom; ++jatom)
         {
             tmp0 = r[0][3 * iatom] - r[0][3 * jatom];
             tmp1 = r[0][3 * iatom + 1] - r[0][3 * jatom + 1];
             tmp2 = r[0][3 * iatom + 2] - r[0][3 * jatom + 2];
 
-            tmp0 = box[0][0] * WrapPBC(tmp0);
-            tmp1 = box[0][1] * WrapPBC(tmp0);
-            tmp2 = box[0][2] * WrapPBC(tmp0);
+            /* periodic boundary condition  */
+            if (tmp0 > 0.5) --tmp0;
+            else if (tmp0 < -0.5) ++tmp0;
+            if (tmp1 > 0.5) --tmp1;
+            else if (tmp1 < -0.5) ++tmp1;
+            if (tmp2 > 0.5) --tmp2;
+            else if (tmp2 < -0.5) ++tmp2;
+            tmp0 *= box[0][0];
+            tmp1 *= box[0][1];
+            tmp2 *= box[0][2];
 
-            tmp0 *= tmp0;
-            tmp0 += tmp1 * tmp1 + tmp2 * tmp2;
-            if (tmp0 < rcut1 || tmp0 > rcut2)
+            tmp3 = tmp0 * tmp0 + tmp1 * tmp1 + tmp2 * tmp2;
+            if (tmp3 < rcut1 || tmp3 > rcut2)
                 continue;
 
-            l_neigh[iatom][N_neigh[iatom]] = jatom;
+            list_neigh[iatom][N_neigh[iatom]] = jatom;
             ++N_neigh[iatom];
         }
     }
@@ -166,9 +162,17 @@ int main(int argc, char **argv)
             #pragma omp parallel for schedule(dynamic) firstprivate(t1)
             for (iatom = 0; iatom < Natom; ++iatom)
             {
-                dr[3 * iatom] = box[t1][0] * WrapPBC(dr[3 * iatom]);
-                dr[3 * iatom + 1] = box[t1][1] * WrapPBC(dr[3 * iatom + 1]);
-                dr[3 * iatom + 2] = box[t1][2] * WrapPBC(dr[3 * iatom + 2]);
+                /* periodic boundary condition      */
+                if (dr[3 * iatom] > 0.5) --dr[3 * iatom];
+                else if (dr[3 * iatom] < -0.5) ++dr[3 * iatom];
+                if (dr[3 * iatom + 1] > 0.5) --dr[3 * iatom + 1];
+                else if (dr[3 * iatom + 1] < -0.5) ++dr[3 * iatom + 1];
+                if (dr[3 * iatom + 2] > 0.5) --dr[3 * iatom + 2];
+                else if (dr[3 * iatom + 2] < -0.5) ++dr[3 * iatom + 2];
+                dr[3 * iatom] *= box[t1][0];
+                dr[3 * iatom + 1] *= box[t1][1];
+                dr[3 * iatom + 2] *= box[t1][2];
+
                 dr_sum[iatom] = dr[3 * iatom] + dr[3 * iatom + 1] + dr[3 * iatom + 2];
             }
     
@@ -189,7 +193,7 @@ int main(int argc, char **argv)
                       + dr[3 * iatom + 2] * dr[3 * iatom + 2];
                 for (k = 0; k < N_neigh[iatom]; ++k)
                 {
-                    jatom = l_neigh[iatom][k];
+                    jatom = list_neigh[iatom][k];
                     tmp1 += cos(qmax_2 * (dr_sum[iatom] + dr_sum[jatom]));
                     tmp2 += cos(qmax_2 * (dr_sum[iatom] - dr_sum[jatom]));
                     tmp4 += (dr[3 * iatom] + dr[3 * jatom]) * (dr[3 * iatom] + dr[3 * jatom]) \
@@ -211,7 +215,8 @@ int main(int argc, char **argv)
         
 
     /* output                           */
-    double norm1 = 1. / (Natom * Nstart), norm2 = 1. / (N_pair * Nstart);
+    double norm1 = 1. / (Natom * Nstart);
+    double norm2 = 1. / (N_pair * Nstart);
     
     fp_out = fopen("sisf.dat", "w");
     fprintf(fp_out, "# t  self  P  Q\n");
