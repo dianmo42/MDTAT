@@ -5,5 +5,13 @@ int main(int argc, char **argv)
 {
     Initialize();
     
-    for 
+    for (int istep = 0; istep < Nstep; ++istep)
+    {
+        ReadDump(istep);
+        Compute(istep);
+    }
+
+    Output();
+
+    return 0;
 }
