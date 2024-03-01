@@ -116,9 +116,9 @@ int main(int argc, char **argv)
     /* build neighbor list at first step    */
     for (iatom = 0; iatom < Natom; ++iatom)
     {
-    #pragma omp parallel for schedule(dynamic) \
-            firstprivate(rcut1, rcut2) \
-            private(tmp0, tmp1, tmp2, tmp3)
+    // #pragma omp parallel for schedule(dynamic) \
+    //         firstprivate(rcut1, rcut2) \
+    //         private(tmp0, tmp1, tmp2, tmp3)
         for (jatom = 0; jatom < Natom; ++jatom)
         {
             tmp0 = r[0][3 * iatom] - r[0][3 * jatom];
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
     /* total number of atom pairs       */
     for (iatom = 0; iatom < Natom; ++iatom)
         N_pair += N_neigh[iatom];
-    // printf("Total number of atom pairs: %d\n", N_pair);
+    printf("Total number of atom pairs: %d\n", N_pair);
 
     for (i = 0; i < Nstart; ++i)
     {
