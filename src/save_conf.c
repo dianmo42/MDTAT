@@ -8,6 +8,7 @@ void SaveConf(int current_step)
 {
     static int check = -1;
     static double tmp1, tmp2;
+    int i, j;
 
     if (check == current_step)
         return;
@@ -19,8 +20,16 @@ void SaveConf(int current_step)
         box_cur[i] = tmp2 - tmp1;
     }
 
-    for (int i = 0; i < Natom; ++i)
+    for (i = 0; i < Natom; ++i)
     {
-        
+        // type = atoi(strtok(dump_buff[9 + i], " "));
+        for (j = 0; j < Dimension; ++j)
+        {
+            r_cur[3 * i + j] = atof(strtok(NULL, " "));
+        }
     }
+
+    check = current_step;
+
+    return;
 }

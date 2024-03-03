@@ -22,15 +22,14 @@ int main(int argc, char **argv)
         for (int i_ref = 0; i_ref < Ncount; ++i_ref)
         {
             int i_gap = istep - i_ref * Nfreq;
-            if (istep - i_ref * Nfreq < 1)
+
+            if (i_gap < 1)
+                break;
+            if (i_gap % Nevery)
                 break;
             
-            for (int i_repeat = 0; i_repeat < Nrepeat; ++i_repeat)
-            {
-                if (i_gap != )
-            }
+            Compute(i_gap / Nevery);
         }
-        Compute(istep);
     }
 
     Output();
