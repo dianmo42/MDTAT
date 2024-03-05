@@ -11,7 +11,9 @@ extern int Natom, Nstep;
 extern int MaxSample, Nevery, Ncount, Nfreq, Nrepeat;
 extern char **dump_buff;
 extern double *r_cur, **r_ref, *box_cur, **box_ref;
-extern double **dr;
+extern double *dr;
+
+extern double norm_atom, norm_count;
 
 extern char **buff;
 

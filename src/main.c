@@ -5,11 +5,15 @@ int main(int argc, char **argv)
 {
     ReadPara();
     AllocMem();
-    
-    for (int istep = 0; istep < Nstep + 1; ++istep)
-    {
-        ReadDump(istep);
 
+    int istep, i_ref, i_line;
+    fp_in = OpenFile(dumpfile, "r");
+    for (istep = 0; istep < Nstep + 1; ++istep)
+    {
+        /* read dump file               */
+        for (i_line = 0; i_line < Natom + 9; ++i_line)
+            fgets(buff[i_line], 256, fp_in);
+        
         /* save refference configuration */
         if (istep % Nfreq == 0)
         {
@@ -28,7 +32,7 @@ int main(int argc, char **argv)
             if (i_gap % Nevery)
                 break;
             
-            Compute(i_gap / Nevery);
+            Compute(i_ref, i_gap);
         }
     }
 

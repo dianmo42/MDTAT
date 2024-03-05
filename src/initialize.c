@@ -9,6 +9,8 @@ char **dump_buff;
 double *r_cur, **r_ref, *box_cur, **box_ref;
 double **dr;
 
+double norm_atom, norm_count;
+
 /* Read preset parameters       */
 void ReadPara()
 {
@@ -22,6 +24,7 @@ void ReadPara()
      * */
     fgets(buff, 256, fp_in);
 
+
     return;
 }
 
@@ -34,6 +37,8 @@ void AllocMem()
     Ncount = (Nstep - MaxSample) / Nfreq;
     r_cur = (double *)malloc(Dimension * Natom * sizeof(double));
     box_cur = (double *)malloc(Dimension * sizeof(double));
+    dr = (double *)malloc(Dimension * Natom * sizeof(double));
+
     r_ref = (double **)malloc(Ncount * sizeof(double *));
     box_ref = (double **)malloc(Ncount * sizeof(double *));
     for (int i = 0; i < Ncount; ++i)
@@ -48,5 +53,7 @@ void AllocMem()
      * ======================
      * */
 
+    norm_atom = 1. / Natom;
+    norm_count = 1. / Ncount;
     return;
 }
