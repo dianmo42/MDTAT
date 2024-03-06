@@ -3,18 +3,16 @@
 #include "mdtat.h"
 #include "functions.h"
 
-#include <stdio.h>
-
-void output()
+void Output()
 {
     if (imsd)
     {
-        FILE *fp = OpenFile("msd.dat", "w");
+        FILE *fp = fopen("msd.dat", "w");
         fprintf(fp, "# t  MSD  NGP\n");
-        for (int i = 1; i < Nrepeat; ++i)
+        for (int i = 0; i < Nrepeat; ++i)
         {
             fprintf(fp, "%.3f  %lf  %lf\n",
-                    i * Nevery * dt,
+                    (i + 1) * Nevery * dt,
                     msd[i] / Ncount,
                     ngp[i] / Ncount);
         }
@@ -23,17 +21,19 @@ void output()
 
     if (isisf)
     {
-        FILE *fp = OpenFile("sisf.dat", "w");
+        FILE *fp = fopen("sisf.dat", "w");
         fprintf(fp, "# t  SISF  Chi4\n");
-        for (int i = 1; i < Nrepeat; ++i)
+        for (int i = 0; i < Nrepeat; ++i)
         {
             sisf[i] /= Ncount;
             chi4[i] /= Ncount;
             chi4[i] -= sisf[i] * sisf[i];
             fprintf(fp, "%.3f  %lf  %lf\n",
-                    i * Nevery * dt,
+                    (i + 1) * Nevery * dt,
                     sisf[i],
                     chi4[i]);
+            if (sisf[i] < 0.001)
+                break;
         }
         fclose(fp);
     }

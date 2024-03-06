@@ -5,16 +5,20 @@
 
 #define Dimension   3
 
-FILE *fp_in, *fp_out;
+extern FILE *fp_out;
 
 extern int Natom, Nstep;
-extern int MaxSample, Nevery, Ncount, Nfreq, Nrepeat;
+extern double dt;
+extern int max_sample, Nevery, Ncount, Nfreq, Nrepeat;
 extern char **dump_buff;
 extern double *r_cur, **r_ref, *box_cur, **box_ref;
 extern double *dr;
-
+extern double qmax;
+extern int imsd, isisf;
+extern double *msd, *sisf;
+extern double *ngp, *chi4;
 extern double norm_atom, norm_count;
 
-extern char **buff;
+extern char **buff, *dump_file;
 
 #endif

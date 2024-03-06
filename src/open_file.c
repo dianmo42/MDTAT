@@ -1,6 +1,7 @@
 /* Input and Output */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 FILE *OpenFile(const char *filename, const char *modes)
 {

@@ -4,6 +4,10 @@
 FILE *OpenFile(const char *filename, const char *modes);
 void ReadPara();
 void AllocMem();
-double mean(double *X, int N);
+void SaveConf(int current_step);
+void Compute(int i_ref, int t);
+void Compute_MSD(int t);
+void Compute_SISF(int t);
+void Output();
 
 #endif

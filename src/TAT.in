@@ -1,0 +1,10 @@
+/data/home/zhangdm/CuZr/1010Ks/720K_2E5frames_100fs.dump    # dumpfile
+2048                                                        # Natom
+10000                                                       # Nstep
+0.1                                                         # dt
+100                                                         # Nfreq
+1                                                           # Nevery
+1000                                                        # Nrepeat
+1                                                           # imsd
+1                                                           # isisf
+3.0                                                         # qmax

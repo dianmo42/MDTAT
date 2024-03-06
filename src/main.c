@@ -1,38 +1,46 @@
 #include "mdtat.h"
 #include "functions.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 int main(int argc, char **argv)
 {
     ReadPara();
     AllocMem();
 
-    int istep, i_ref, i_line;
-    fp_in = OpenFile(dumpfile, "r");
+    int istep, i_ref, i_gap, i_line;
+    FILE *fp_dump = OpenFile(dump_file, "r");
     for (istep = 0; istep < Nstep + 1; ++istep)
     {
         /* read dump file               */
         for (i_line = 0; i_line < Natom + 9; ++i_line)
-            fgets(buff[i_line], 256, fp_in);
+            fgets(dump_buff[i_line], 256, fp_dump);
         
         /* save refference configuration */
         if (istep % Nfreq == 0)
         {
-            SaveConf(istep);
-            memcpy(r_ref[istep / Nfreq], r_cur, Dimension * Natom * sizeof(double));
-            memcpy(box_ref[istep / Nfreq], box_cur, Dimension * sizeof(double));
+            i_ref = istep / Nfreq;
+            if (i_ref < Ncount)
+            {
+                SaveConf(istep);
+                memcpy(r_ref[i_ref], r_cur, Dimension * Natom * sizeof(double));
+                memcpy(box_ref[i_ref], box_cur, Dimension * sizeof(double));
+            }
         }
 
         /* compute correlation function  */
-        for (int i_ref = 0; i_ref < Ncount; ++i_ref)
+        for (i_ref = 0; i_ref < Ncount; ++i_ref)
         {
-            int i_gap = istep - i_ref * Nfreq;
+            i_gap = istep - i_ref * Nfreq;
 
-            if (i_gap < 1)
-                break;
+            if (i_gap < 1 || i_gap > max_sample)
+                continue;
             if (i_gap % Nevery)
-                break;
+                continue;
             
-            Compute(i_ref, i_gap);
+            SaveConf(istep);
+            Compute(i_ref, i_gap / Nevery);
         }
     }
 
