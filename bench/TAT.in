@@ -1,0 +1,10 @@
+./LJ_T1.44_1E2frames_0.5tau.dump							# dumpfile
+32000                                                       # Natom
+100                                                         # Nstep
+0.5                                                         # dt
+10                                                          # Nfreq
+1                                                           # Nevery
+50                                                          # Nrepeat
+1                                                           # imsd
+0                                                           # isisf
+3.0                                                         # qmax
