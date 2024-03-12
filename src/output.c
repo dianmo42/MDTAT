@@ -31,7 +31,7 @@ void Output()
             fprintf(fp, "%.3f  %lf  %lf\n",
                     (i + 1) * Nevery * dt,
                     sisf[i],
-                    chi4[i]);
+                    Natom * chi4[i]);
             if (sisf[i] < 0.001)
                 break;
         }

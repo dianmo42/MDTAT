@@ -25,7 +25,8 @@ void SaveConf(int current_step)
         type = atoi(strtok(dump_buff[9 + i], " "));
         for (j = 0; j < Dimension; ++j)
         {
-            r_cur[i * Dimension + j] = atof(strtok(NULL, " "));
+            // r_cur[i * Dimension + j] = atof(strtok(NULL, " "));
+            r_cur[i * Dimension + j] = atof(strtok(NULL, " ")) / box_cur[j];
         }
     }
 

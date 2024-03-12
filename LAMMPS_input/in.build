@@ -1,0 +1,25 @@
+# Build simulation system
+# NOTE: This script can be modified for different atomic structures, 
+# configurations, etc.
+
+
+# Generate the box and atoms
+variable    a equal 3.69    # lattice constant
+variable    xx equal 10     # number of lattices
+variable    yy equal 10     # in x y z direction
+variable    zz equal 10     # 
+variable    ntype equal 2   # types of atoms
+
+lattice     fcc ${a}
+region      box block 0 ${xx} 0 ${yy} 0 ${zz}
+create_box  ${ntype} box
+create_atoms 1 box
+set         type 1 type/ratio 2 0.5 36795
+mass        1 63.56
+mass        2 91.24
+
+variable    a delete
+variable    xx delete
+variable    yy delete
+variable    zz delete
+variable    ntype delete

@@ -1,0 +1,9 @@
+# NOTE: This script can be modified for different simulation settings
+
+# Setup neighbor style
+neighbor        0.3 bin
+neigh_modify    once no every 10 delay 0 check yes
+
+# Reset before start simulation
+run_style       verlet
+reset_timestep  0
