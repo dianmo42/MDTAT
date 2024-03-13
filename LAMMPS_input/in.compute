@@ -3,7 +3,7 @@
 # Radial distribution function
 # If you want the RDF for distance beyond the force cutoff,
 # it's recommended to rerun the dump file and increase cutoff
-compute     MyRDF all rdf 500 cutoff
+compute     MyRDF all rdf 500
 # comm_modify mode single cutoff 15.3
 # compute     MyRDF all rdf 500 cutoff 15.0
 

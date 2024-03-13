@@ -18,6 +18,8 @@ variable        Pdamp equal 1000
 timestep        0.002
 variable        t_sim equal 20            
 variable        Nstep equal ${t_sim}/dt
+variable        thermo_every equal 50
+variable        dump_every equal 500
 
 # Build the system or read from a existing data file
 include         in.build

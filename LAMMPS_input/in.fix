@@ -3,7 +3,7 @@
 # Time average coordinate
 # Note: This function MUST be used with 
 # "Unwrapped coordiantes" in in.compute
-fix         MyXYZ all ave/atom 1 500 500 c_MyXYZ[*]
+fix         MyXYZ all ave/atom 1 ${dump_every} ${dump_every} c_MyXYZ[*]
 
 # Radial distribution function
 # Note: This function MUST be used with 
