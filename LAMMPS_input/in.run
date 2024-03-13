@@ -16,7 +16,8 @@ variable        Pstart equal 0
 variable        Pstop equal 0
 variable        Pdamp equal 1000
 timestep        0.002
-variable        t_sim equal 10            
+variable        t_sim equal 20            
+variable        Nstep equal ${t_sim}/dt
 
 # Build the system or read from a existing data file
 include         in.build
@@ -25,6 +26,7 @@ include         in.build
 # Information about simulation system
 include         in.sys
 include         in.pair
+
 # Minimize
 # include         in.min
 
@@ -37,6 +39,6 @@ include         in.out
 
 # Run simulation
 fix             1 all npt temp ${Tstart} ${Tstop} $(v_Tdamp*dt) iso ${Pstart} ${Pstop} $(v_Pdamp*dt)
-run             $(v_t_sim/dt)
+run             ${Nstep}
 
-write_data      CuZr.data
+# write_data      CuZr.data

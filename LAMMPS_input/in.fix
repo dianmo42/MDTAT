@@ -1,0 +1,12 @@
+# Custom fix
+
+# Time average coordinate
+# Note: This function MUST be used with 
+# "Unwrapped coordiantes" in in.compute
+fix         MyXYZ all ave/atom 1 500 500 c_MyXYZ[*]
+
+# Radial distribution function
+# Note: This function MUST be used with 
+# "Raidial distribution function" in in.compute
+fix         MyRDF all ave/time 5000 $(v_Nstep/5000) ${Nstep} &
+            c_MyRDF[1] c_MyRDF[2] file TAT.rdf mode vector
