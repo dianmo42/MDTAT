@@ -1,0 +1,4 @@
+# input for MDTAT
+
+dumpfile        CuZr_1000frames_10ps.dump
+Nframe          1000
