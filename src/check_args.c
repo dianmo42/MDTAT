@@ -12,6 +12,11 @@ void CheckArgs(int argc, char **argv)
         if (strcmp(argv[iarg], "-in") == 0)
         {
             stdin = fopen(argv[iarg + 1], "r");
+            if (stdin = NULL)
+            {
+                fprintf(stderr, "Error!\nCan not open file '%s'!\n", argv[iarg + 1]);
+                exit(1);
+            }
             continue;
         }
 
