@@ -3,24 +3,26 @@
 #include <math.h>
 #include <omp.h>
 
-void Compute()
+void Compute(int t0, int t)
 {
-    /* compute displacement of all atoms */
-    for (iatom = 0; iatom < Natom; ++iatom)
+    int i;
+    int t1 = t0 + (t + 1) * Nevery;
+    /* displacement of all atoms */
+    #pragma omp parallel for schedule(dynamic)
+    for (i = 0; i < Natom; ++i)
     {
-        dr[iatom].x = r1[iatom].x - r2[iatom].x;
-        dr[iatom].y = r1[iatom].y - r2[iatom].y;
-        dr[iatom].z = r1[iatom].z - r2[iatom].z;
+        dr[i].x = atom[t0][i].x - atom[t1][i].x;
+        dr[i].y = atom[t0][i].y - atom[t1][i].y;
+        dr[i].z = atom[t0][i].z - atom[t1][i].z;
     }
     
     /* mean-squared displacement */
-    for (iatom = 0; iatom < Natom; ++iatom)
+    double MSD_tmp;
+    for (i = 0; i < Natom; ++i)
     {
-        MSD_tmp = dr[iatom].x * dr[iatom].x \
-                + dr[iatom].y * dr[iatom].y \
-                + dr[iatom].z * dr[iatom].z;
-        MSD += MSD_tmp;
-        NGP += MSD_tmp * MSD_tmp;
+        MSD_tmp = dr[i].x * dr[i].x + dr[i].y * dr[i].y + dr[i].z * dr[i].z;
+        MSD[t] += MSD_tmp;
+        NGP[t] += MSD_tmp * MSD_tmp;
     }
 
     /* self-intermediate scattering function */

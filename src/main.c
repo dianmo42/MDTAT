@@ -11,24 +11,19 @@
 
 int main(int argc, char **argv)
 {
-    CheckArgs(argc, argv);      /* input file */
-    CheckInput(fn_in);          /* parameters */
-    CheckDump(fn_dump);         /* format     */
+    Args(argc, argv);
+    Input();
+    for (int i = 0; i < 4; ++i)
+        fscanf(stdin, "%*[^\n]\n");
+    fscanf(stdin, "%d\n", &Natom);
+    rewind(stdin);
+    AllocMem();
+    ReadDump();
 
-    int iframe;
-    int icomp;
-    int iref;
-    for (iframe = 0; iframe < Nframe; ++iframe)
+    for (int t0 = 0; t0 < Nframe - Nrepeat * Nevery; t0 += Nfreq)
     {
-        ReadDump();
-        
-        iref = CheckFrame(iframe, 0);
-        if (iref != -1)
-            SaveDump(iref);
-
-        icomp = CheckFrame(iframe, 1);
-        if (icomp != -1)
-            Compute(icomp);
+        for (int t = 0; t < Nrepeat; ++t)
+            Compute(t0, t);
     }
 
     Output();

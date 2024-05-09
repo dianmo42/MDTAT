@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void CheckInput()
+void Input()
 {
     char buff[256], *token, *comtype;
     int ok, id;
@@ -18,11 +18,12 @@ void CheckInput()
             continue;
         
         token = strtok(buff, " ");
+
         /* information of dumpfile */
         if (strcmp(token, "dumpfile") == 0)
         {
             token = strtok(NULL, " ");
-            strcpy(fn_dump, token, sizeof(token));
+            strcpy(fn_dump, token);
             continue;
         }
         if (strcmp(token, "Nframe") == 0)
@@ -33,11 +34,11 @@ void CheckInput()
         }
 
         /* parameters for analyzing */
-        if (strcmp(token), "compute")
+        if (strcmp(token, "compute") == 0)
         {
             id = atoi(strtok(NULL, " "));
-            comtype = strcpy(strtok(NULL, " "));
-            doulbe ** #comtype_#id;
         }
     }
+
+    return;
 }
