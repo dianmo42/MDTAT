@@ -5,7 +5,6 @@
  * */
 
 #include "mdtat.h"
-#include "functions.h"
 
 #include <stdio.h>
 
@@ -20,10 +19,21 @@ int main(int argc, char **argv)
     AllocMem();
     ReadDump();
 
+    int Ncount = 0;
     for (int t0 = 0; t0 < Nframe - Nrepeat * Nevery; t0 += Nfreq)
     {
         for (int t = 0; t < Nrepeat; ++t)
             Compute(t0, t);
+        ++Ncount;
+    }
+
+    double norm = 1. / Ncount;
+    for (int t = 0; t < Nrepeat; ++t)
+    {
+        MSD[t] *= norm;
+        NGP[t] *= norm;
+        SISF[t] *= norm;
+        Xhi4[t] *= norm;
     }
 
     Output();

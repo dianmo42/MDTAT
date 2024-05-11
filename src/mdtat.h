@@ -10,6 +10,7 @@
 /* functions */
 void Args(int argc, char **argv);
 void Input();
+void AllocMem();
 void ReadDump();
 void Compute(int t0, int t1);
 void Output();
@@ -29,12 +30,13 @@ typedef struct
 
 /* variables */
 extern int Natom, Nframe;
+extern double timestep;
 extern VecR *dr;
 extern VecR *box;
 extern Atom **atom;
 
 extern int Nfreq, Nevery, Nrepeat;
 extern double *MSD, *NGP;
-extern double *SISF, *Xhi4;
+extern double *SISF, *Xhi4, qmax;
 
 #endif

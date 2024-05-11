@@ -4,10 +4,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+int Natom, Nframe;
+double timestep;
+VecR *dr;
+VecR *box;
+Atom **atom;
+
+int Nfreq, Nevery, Nrepeat;
+double *MSD, *NGP;
+double *SISF, *Xhi4, qmax;
+
 void Input()
 {
-    char buff[256], *token, *comtype;
-    int ok, id;
+    char buff[256], *token;
 
     while (1)
     {
@@ -23,7 +32,7 @@ void Input()
         if (strcmp(token, "dumpfile") == 0)
         {
             token = strtok(NULL, " ");
-            strcpy(fn_dump, token);
+            stdin = fopen(token, "r");
             continue;
         }
         if (strcmp(token, "Nframe") == 0)
@@ -32,13 +41,31 @@ void Input()
             Nframe = atoi(token);
             continue;
         }
+        if (strcmp(token, "timestep") == 0)
+        {
+            timestep = atof(strtok(NULL, " "));
+            continue;
+        }
 
         /* parameters for analyzing */
-        if (strcmp(token, "compute") == 0)
+        if (strcmp(token, "Nfreq") == 0)
         {
-            id = atoi(strtok(NULL, " "));
+            Nfreq = atoi(strtok(NULL, " "));
+            continue;
+        }
+        if (strcmp(token, "Nevery") == 0)
+        {
+            Nevery = atoi(strtok(NULL, " "));
+            continue;
+        }
+        if (strcmp(token, "Nrepeat") == 0)
+        {
+            Nrepeat = atoi(strtok(NULL, " "));
+            continue;
         }
     }
+
+    
 
     return;
 }

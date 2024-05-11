@@ -8,7 +8,7 @@
 #define Allocmem(var, num, type)                \
     var = (type *)malloc((num) * sizeof(type))
 #define Allocmem2(var, num1, num2, type)        \
-    Allocmem(var, num1, type);                  \
+    Allocmem(var, num1, type *);                  \
     Allocmem(var[0], (num1) * (num2), type);    \
     for (i = 1; i < num1; ++i)                  \
         var[i] = var[i - 1] + num2;
