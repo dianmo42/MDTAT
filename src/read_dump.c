@@ -26,7 +26,7 @@ void ReadDump()
         for (i = 0; i < Natom; ++i)
         {
             fgets(buff, 256, stdin);
-            id = atoi(strtok(buff, " "));
+            id = atoi(strtok(buff, " ")) - 1;
             atom[t][id].type = atoi(strtok(NULL, " "));
             atom[t][id].x = atof(strtok(NULL, " "));
             atom[t][id].y = atof(strtok(NULL, " "));

@@ -27,6 +27,10 @@ void AllocMem()
     Allocmem(NGP, Nrepeat, double);
     Allocmem(SISF, Nrepeat, double);
     Allocmem(Xhi4, Nrepeat, double);
+    memset(MSD, 0, Nrepeat * sizeof(double));
+    memset(NGP, 0, Nrepeat * sizeof(double));
+    memset(SISF, 0, Nrepeat * sizeof(double));
+    memset(Xhi4, 0, Nrepeat * sizeof(double));
 
     return;
 }

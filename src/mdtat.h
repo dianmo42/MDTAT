@@ -12,7 +12,7 @@ void Args(int argc, char **argv);
 void Input();
 void AllocMem();
 void ReadDump();
-void Compute(int t0, int t1);
+void Compute(int t0, int t);
 void Output();
 
 /* structure */

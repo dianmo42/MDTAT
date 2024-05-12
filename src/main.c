@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 {
     Args(argc, argv);
     Input();
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 3; ++i)
         fscanf(stdin, "%*[^\n]\n");
     fscanf(stdin, "%d\n", &Natom);
     rewind(stdin);
