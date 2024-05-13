@@ -34,6 +34,7 @@ int main(int argc, char **argv)
         NGP[t] *= norm;
         SISF[t] *= norm;
         Xhi4[t] *= norm;
+        Xhi4[t] -= SISF[t] * SISF[t];
     }
 
     Output();
