@@ -35,6 +35,7 @@ int main(int argc, char **argv)
         SISF[t] *= norm;
         Xhi4[t] *= norm;
         Xhi4[t] -= SISF[t] * SISF[t];
+        Xhi4[t] *= Natom;
     }
 
     Output();
