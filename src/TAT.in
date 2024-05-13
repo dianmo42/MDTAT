@@ -1,9 +1,13 @@
-# input for MDTAT
+# begin
+# input for MDTAT program
 
-dumpfile        CuZr_10000frames_10ps.dump
-Nframe          10000
-timestep        0.01
+dumpfile        680K-200000frames-100fs-1.dump
+Nframe          200000
+timestep        0.1
 
-Nfreq           500
+Nfreq           50
 Nevery          10
-Nrepeat         100
+Nrepeat         10000
+qmax            2.65
+
+# end
