@@ -13,7 +13,7 @@ void Args(int argc, char **argv)
         if (strcmp(argv[iarg], "-in") == 0)
         {
             stdin = fopen(argv[iarg + 1], "r");
-            if (stdin = NULL)
+            if (stdin == NULL)
             {
                 fprintf(stderr, "Error!\nCan not open file '%s'!\n", argv[iarg + 1]);
                 exit(1);
@@ -24,7 +24,7 @@ void Args(int argc, char **argv)
         if (strcmp(argv[iarg], "-out") == 0)
         {
             stdout = fopen(argv[iarg + 1], "w");
-            if (stdout = NULL)
+            if (stdout == NULL)
             {
                 fprintf(stderr, "Error!\nCan not open file '%s'!\n", argv[iarg + 1]);
                 exit(1);
