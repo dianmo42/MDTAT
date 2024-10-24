@@ -1,3 +1,5 @@
+# The project has been moved to (MDTAT)][https://github.com/dianmo42/MD-TAT]. This repository will be deleted in two weeks.
+
 # MDTAT
 Molecular Dynamics Trajectory Analyzing Tool
 
